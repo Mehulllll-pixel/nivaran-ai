@@ -70,13 +70,16 @@ def execute_voice_call_hinglish(
     success = outcome_status in (OutcomeStatus.PENDING, OutcomeStatus.RECOVERED)
 
     # Recovered amount logic:
-    # If promised_amount is not null AND the guardrail action is schedule_follow_up -> recovered = promised_amount
-    # In all other cases -> recovered = 0.0
+    # For schedule_follow_up with a promise: recovered = 0.0 and status = PENDING.
+    # The amount is only credited when POST /agent/fulfill-promise/{id} is explicitly
+    # called after the payment actually arrives. Crediting here would cause
+    # double-counting because fulfill-promise appends a second outcome row.
+    # All other actions (immediate recovery, dispute escalation, etc.) are unaffected.
     extraction = extraction_result.get("extraction", {})
     promised_amount = extraction.get("promised_amount")
-    
+
     if promised_amount is not None and action_plan["action"] == "schedule_follow_up":
-        recovered = float(promised_amount)
+        recovered = 0.0  # held until fulfill-promise is called
     else:
         recovered = 0.0
 

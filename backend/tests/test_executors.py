@@ -28,7 +28,7 @@ def test_clean_promise():
     print(f"  Notes: {notes}")
     
     assert success is True
-    assert recovered == 5000.0
+    assert recovered == 0.0   # held at 0 until fulfill-promise is explicitly called
     assert "Promised: ₹5000" in notes
     assert at == ActionType.VOICE_CALL_HINGLISH.value
     assert os == OutcomeStatus.PENDING.value
