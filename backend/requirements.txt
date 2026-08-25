@@ -1,0 +1,17 @@
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+sqlalchemy==2.0.35
+psycopg2-binary==2.9.9
+pydantic==2.9.2
+python-dotenv==1.0.1
+faker==30.3.0
+
+# Voice pipeline — STT (Oriserve Hinglish Whisper) + NLU (Groq)
+transformers==4.45.2
+torch==2.4.1
+soundfile==0.12.1
+groq==0.11.0
+
+# TTS: also run this separately (not pip-installable from PyPI):
+#   git clone https://github.com/harrrshall/hinglish-tts
+#   pip install -e hinglish-tts
