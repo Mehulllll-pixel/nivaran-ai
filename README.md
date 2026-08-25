@@ -72,12 +72,7 @@ The dashboard will run at `http://127.0.0.1:5173`.
 
 ### 3. Voice Pipeline Research Suite
 
-The `research/` directory contains standalone test harnesses and reference audio used during voice pipeline development:
-
-- `test_amount_extraction.py`: Validates numerical amount parsing and currency handling.
-- `test_temporal_resolver.py`: Tests categorical and relative date resolution for Hinglish expressions (e.g., "kal", "parso", "agle hafte").
-- `test_guardrails.py`: Confirms deterministic enforcement of compliance opt-outs, dispute escalations, and payment reconciliations.
-- `audio/`: Reference audio recordings used for end-to-end transcription and extraction testing.
+See [Testing](#testing) below for details on the validation suite.
 
 ## Testing
 
