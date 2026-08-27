@@ -84,13 +84,28 @@ ACTION_SEQUENCE = {
 }
 
 
-def decide_action(root_cause: RootCause, attempt_number: int) -> tuple[ActionType, str]:
+def decide_action(
+    root_cause: RootCause,
+    attempt_number: int,
+    raw_reason_code: str | None = None,
+    event_type: EventType | None = None,
+) -> tuple[ActionType, str]:
     """
     Returns (chosen_action, human_readable_reasoning).
     Enforces the stopping rule: if attempt_number exceeds MAX_ATTEMPTS,
     the agent stops rather than escalating indefinitely.
     """
     max_attempts = MAX_ATTEMPTS.get(root_cause, 1)
+
+    if raw_reason_code:
+        if raw_reason_code.strip().lower() != root_cause.value:
+            signal_desc = f"Raw code '{raw_reason_code}' classified as '{root_cause.value}'"
+        else:
+            signal_desc = f"Raw code '{raw_reason_code}' mapped to '{root_cause.value}'"
+    elif event_type:
+        signal_desc = f"Signal '{event_type.value}' mapped to '{root_cause.value}'"
+    else:
+        signal_desc = f"Root cause classified as '{root_cause.value}'"
 
     if attempt_number > max_attempts:
         return (
@@ -104,8 +119,9 @@ def decide_action(root_cause: RootCause, attempt_number: int) -> tuple[ActionTyp
     action = sequence.get(attempt_number, ActionType.ESCALATE_HUMAN)
 
     reasoning = (
-        f"Root cause classified as '{root_cause.value}'. "
+        f"{signal_desc}. "
         f"This is attempt {attempt_number} of {max_attempts} allowed. "
         f"Decision table maps this to '{action.value}'."
     )
     return action, reasoning
+

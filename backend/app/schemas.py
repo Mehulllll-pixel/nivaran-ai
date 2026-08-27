@@ -24,6 +24,10 @@ class EventOut(BaseModel):
     raw_reason_code: Optional[str]
     demo_audio_path: Optional[str] = None
     demo_transcript: Optional[str] = None
+    # Populated server-side by the list endpoint: the real transcript fed to
+    # the NLU pipeline, parsed from voice action notes. None if voice was
+    # never reached for this event.
+    voice_transcript: Optional[str] = None
     created_at: datetime
 
     class Config:

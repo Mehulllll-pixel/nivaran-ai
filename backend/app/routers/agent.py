@@ -89,7 +89,13 @@ def _process_event(event: models.Event, db: Session) -> models.Decision:
     attempt_number = prior_attempts + 1
 
     root_cause = classify_root_cause(event.event_type, event.raw_reason_code)
-    chosen_action, reasoning = decide_action(root_cause, attempt_number)
+    chosen_action, reasoning = decide_action(
+        root_cause,
+        attempt_number,
+        raw_reason_code=event.raw_reason_code,
+        event_type=event.event_type,
+    )
+
 
     decision = models.Decision(
         event_id=event.id,
@@ -151,7 +157,22 @@ def _process_event(event: models.Event, db: Session) -> models.Decision:
     db.commit()
     db.refresh(action)
 
-    if chosen_action == models.ActionType.ESCALATE_HUMAN:
+    if chosen_action == models.ActionType.VOICE_CALL_HINGLISH:
+        # Parse genuine OutcomeStatus determined by the guardrail logic in executors.py
+        match_status = re.search(r"OutcomeStatus:\s*(\w+)", notes)
+        if match_status:
+            status_val = match_status.group(1).lower()
+            if status_val == "stopped":
+                status = models.OutcomeStatus.STOPPED
+            elif status_val == "pending":
+                status = models.OutcomeStatus.PENDING
+            elif status_val == "recovered":
+                status = models.OutcomeStatus.RECOVERED
+            else:
+                status = models.OutcomeStatus.FAILED
+        else:
+            status = models.OutcomeStatus.RECOVERED if success else models.OutcomeStatus.FAILED
+    elif chosen_action == models.ActionType.ESCALATE_HUMAN:
         status = models.OutcomeStatus.PENDING
     else:
         status = models.OutcomeStatus.RECOVERED if success else models.OutcomeStatus.FAILED
