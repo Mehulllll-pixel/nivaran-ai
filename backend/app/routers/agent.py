@@ -61,8 +61,11 @@ def _process_event(event: models.Event, db: Session) -> models.Decision:
     Runs one diagnose -> decide -> act -> log cycle for a single event.
     attempt_number = how many decisions already exist for this event + 1.
     """
-    # Short-circuit: if this event is already in a terminal state (RECOVERED or
-    # STOPPED by compliance rule), there is nothing left to do.
+    # Short-circuit #1: outcome-based terminal states.
+    # RECOVERED = payment collected; STOPPED = compliance-driven halt (opt-out,
+    # wrong number, explicit no-contact). ESCALATE_HUMAN is intentionally NOT
+    # included here — its outcome stays PENDING because a human hasn't resolved
+    # it yet, so it would never match this check. That's correct.
     already_terminal = (
         db.query(models.Outcome)
         .join(models.Action, models.Outcome.action_id == models.Action.id)
@@ -73,7 +76,23 @@ def _process_event(event: models.Event, db: Session) -> models.Decision:
         )
         .first()
     )
-    if already_terminal:
+
+    # Short-circuit #2: action-based terminal state for escalations.
+    # Once a case has been handed to a human it must not be re-touched by the
+    # automated agent. This is independent of outcome status — the outcome
+    # remains PENDING until the human closes it. We stop reprocessing here
+    # purely based on the action type, so STOPPED semantics stay pristine.
+    already_escalated = (
+        db.query(models.Action)
+        .join(models.Decision, models.Action.decision_id == models.Decision.id)
+        .filter(
+            models.Decision.event_id == event.id,
+            models.Action.action_type == models.ActionType.ESCALATE_HUMAN,
+        )
+        .first()
+    )
+
+    if already_terminal or already_escalated:
         return (
             db.query(models.Decision)
             .filter(models.Decision.event_id == event.id)
